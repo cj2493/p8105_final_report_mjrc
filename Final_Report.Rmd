@@ -364,7 +364,7 @@ phlth = cdc_df %>%
 (dental | colon) / (lpa | phlth)
 ```
 
-We also wanted to look at lack of health insurance prevalence and health expenditure by state and compare across regions. We created graphs to display differences and ran ANOVAs to test significance.
+We also wanted to look at lack of health insurance prevalence and health expenditure by state and compare across regions. We created graphs to display differences and ran an ANOVA to test significance.
 
 ```{r, insurance_map}
 
@@ -471,14 +471,36 @@ cdc_df %>%
   )
 ```
 
+```{r, echo = FALSE}
+reg = cdc_df %>%
+  distinct(state, .keep_all = TRUE) %>%
+  mutate(region = fct_reorder(region, health_exp)) %>%
+  lm(health_exp ~ region, data = .)
+
+anova(reg) %>% 
+  broom::tidy() %>% 
+  knitr::kable()
+
+term = c("Region")
+test = c("ANOVA")
+test_stat = c(7.43803)
+p_value = c(0.0003559)
+
+regional_anova = tibble(
+  "Term" = term,
+  "Test" = test,
+  "Test Statistic" = test_stat,
+  "P-Value" = p_value
+)
+
+regional_anova %>% 
+  knitr::kable() %>% 
+  kable_styling(bootstrap_options = "striped", full_width = F, position = "center")
+```
+
 ## Discussion:  
 
 Starting with health insurance, we found that there is a negative correlation between lack of health insurance and prevalence of proactive health practices, which include screening for diseases, and a positive correlation between variables pertaining to poor physical health. The notable exception was the routine checkups variable. There was no association between percent uninsured and the prevalence of routine checkups. This could indicate that there is a cost factor to these associations.
-Having established an association between insurance and preventative care, we next analyzed the predictive ability of health practices on health outcomes. We found that the health practice variables from the dataset have the most predictive power for prevalence of cancer, and the least for high cholesterol. Intuitively, this makes sense for a couple of reasons. First, cholesterol levels are highly related to genetics, and this dataset has no variables collected on genetics. Also, many of the practices measured by this dataset are cancer screening practices. Cancer screening and other proactive health practices that we have mentioned tend to be very expensive, particularly for the uninsured. Since we know cost is often prohibitive, we next wanted to see if healthcare expenditure is uniform across the United States. Regional health expenditure analysis showed that there is a significant difference in healthcare expenditure between regions. 
-
-
-
-
-
-
-## Discussion:  
+Having established an association between insurance and preventative care, we next analyzed the predictive ability of health practices on health outcomes. We found that the health practice variables from the dataset have the most predictive power for prevalence of cancer, and the least for high cholesterol. Intuitively, this makes sense for a couple of reasons. First, cholesterol levels are highly related to genetics, and this dataset has no variables collected on genetics. Also, many of the practices measured by this dataset are cancer screening practices. Cancer screening and other proactive health practices that we have mentioned tend to be very expensive, particularly for the uninsured. Since we know cost is often prohibitive, we next wanted to see if healthcare expenditure is uniform across the United States. Regional health expenditure analysis showed that there is a significant difference in healthcare expenditure between regions.   
+Lastly, we inspected the relationships between specific diseases and health expenditure and percent uninsured. For most diseases, percent uninsured was found to have a positive association with disease. However, this trend is reversed with cancer. But, the relationship between health expenditures and prevalence of disease did not vary with disease.  
+Overall, we found that the relationships between health insurance coverage, disease, and health practices is incredibly intricate and we've only scratched the surface of these questions of interest.
