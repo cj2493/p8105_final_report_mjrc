@@ -82,7 +82,7 @@ data_dictionary %>%
 
 ## Additional Analysis:  
 
-### Regression Analysis: 
+### Multiple Linear Regression: 
 
 To explore the relationship between commonly used health practices and health outcomes, we tried to fit some multiple linear regression models using backwards selection.  The models we created were attempting to predict the prevalence of cancer, high cholesterol and diabetes. For each model, we started with all of the health practice variables: core screenings for men, core screenings for women, dental visits, lack of physical activity, mammogram usage, routine checkups, 
 cholesterol screenings, and colon screenings. All of these variables are also in terms of prevalence. Then, to show the results in a way that people who aren't statisticians could understand, I produced a table for each model that showed which variables were included in the final model and the direction of effect they had on the disease prevalence. Once these models were created, we performed cross validation and compared the RMSEs of each to look at the relative predicting power.
@@ -220,6 +220,7 @@ cv_df %>%
 
 From this, we can see that the health practice variables from the dataset have the most predictive power for prevalence of cancer, and the least for high cholesterol. Intuitively, this makes sense for a couple of reasons. First, cholesterol levels are highly related to genetics, and this dataset has no variables collected on genetics. Also, many of the practices measured by this dataset are cancer screening practices.  
 
+### Simple Linear Regression  
 
 We ran simple linear regressions to determine if there was an association between the prevalence of lack of insurance and the prevalence of health outcomes -- colon/cancer/cholestrol screenings, mammograms, etc. The purpose here was not to build a predictive model, only to test association and therefore any statistics related to model reliability were disregarded.
 
