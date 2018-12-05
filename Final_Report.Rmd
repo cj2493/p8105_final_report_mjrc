@@ -129,6 +129,47 @@ data_dictionary %>%
 
 
 ## Exploratory Analysis:  
+Shiny plots were created to explore the associations between health factors and health outcomes. We defined two health factors of interest: (1) prevalence of uninsured people by city and (2) health care expenditure by state. To give visualizations of the type of plots created, the code below illustrates the plots for the health outcome, cancer. However, in the Shiny document, users can toggle between 9 outcomes.
+
+```{r}
+# transform data to long form
+
+outcome_transform = cdc_df %>% 
+  mutate(city_state = str_c(PlaceName, StateAbbr, sep = ", ")) %>%
+  gather(key = outcome, value = prevalence, BPHIGH_AdjPrev, CANCER_AdjPrev, CHD_AdjPrev, COPD_AdjPrev,    DIABETES_AdjPrev, HIGHCHOL_AdjPrev, OBESITY_AdjPrev, PHLTH_AdjPrev, STROKE_AdjPrev) %>% 
+  mutate(outcome = str_replace(outcome, "_AdjPrev", ""), 
+        outcome = recode(outcome, 'BPHIGH' = 'High Blood Pressure',
+                                  'CANCER' = 'Cancer',
+                                  'CHD' = 'Coronary Heart Disease',
+                                  'COPD' = 'Chronic Obstructive Pulmonary Disease',
+                                  'DIABETES' = 'Diabetes',
+                                  'HIGHCHOL' = 'High Cholesterol',
+                                  'OBESITY' = 'Obesity',
+                                  'PHLTH' = 'Poor Physical Health',
+                                  'STROKE' = 'Stroke')) %>%
+  select(city_state, ACCESS2_AdjPrev, Population2010, Geolocation, health_exp, region, division, outcome, prevalence) 
+
+# Plot of Prevalence of Cancer vs. Prevalence of Uninsured
+outcome_transform %>%
+  filter(outcome == "Cancer") %>%
+  ggplot(aes(x = ACCESS2_AdjPrev, y = prevalence, color = region)) +
+    geom_point(alpha = 0.5) +
+    labs(
+      x = "Prevalence of Uninsured in City",
+      y = "Prevalence of Cancer")
+
+#Plot of Prevalence of Cancer vs. Health Care Expenditures
+outcome_transform %>%
+  filter(outcome == "Cancer") %>%
+  ggplot(aes(x = health_exp, y = prevalence, color = region)) +
+    geom_point(alpha = 0.5) +
+    labs(
+      x = "Health Expenditure",
+      y = "Prevalence of Health Outcome (millions)")
+```
+
+From the plots above, we see that as the percentage of uninsured people increase, the prevalence of cancer decreases. This trend could be explained by the fact that the more people who are uninsured, the less screening for cancer is done, and thus there is a smaller prevalence of diagnosed cancer recorded. There is not an obvious trend for health care expenditures and cancer prevalence. We use the Shiny app to look at the associations with different health outcomes.
+
 
 ## Additional Analysis:  
 
