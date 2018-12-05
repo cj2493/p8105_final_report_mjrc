@@ -29,9 +29,16 @@ Jaisal Amin; ja3314
 Rebekah Yu; dry2115  
 Courtney Johnson; cj2493  
   
-## Motivation:  
+## Motivation, Background, and Initial Questions:  
 
-The motivations for this project are to explore the impact of public health initiatives on health outcome, explore regional differences in health outcomes and the efficacy of public health initiatives, and explore if population size affects health.  
+Motivation for this project was rooted in the group's collective interest in the impact of public health initiatives on health outcomes. While exploring for related datasets, we found city-level data on health practices and health outcomes from the CDC. Project objectives and analysis plans were mainly driven by the data and the information available from the data set. 
+
+The initial question we explored was what are the associations between:
+  (1) prevalence of lack of health insurance, 
+  (2) regular health practices (i.e. pap smear, doctor visits, mammograms), and 
+  (3) health outcomes (diabetes, kidney disease, smoking). 
+  
+To further support our analysis, we hypothesized that health expenditures could be a possible predictor of outcomes and practices, thus, an external data set of health expenditures by state was included. In addition, we were interested in regional trends of health for the data. To obtain regional categories, we found an external data set including four regions and states included in each region. 
 
 ## Related WOrk:  
 
