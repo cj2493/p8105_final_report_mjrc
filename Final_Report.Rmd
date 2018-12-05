@@ -5,6 +5,21 @@ output: github_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(httr)
+library(rvest)
+library(openintro)
+library(ggmap)
+library(patchwork)
+library(modelr)
+library(purrr)
+library(flexdashboard)
+library(viridis)
+library(plotly)
+library(stringr)
+library(p8105.datasets)
+library(kableExtra)
+library(shiny)
 ```
 
 ## Team Members and UNIs:
