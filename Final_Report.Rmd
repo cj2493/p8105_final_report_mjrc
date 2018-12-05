@@ -323,7 +323,7 @@ phlth = cdc_df %>%
 (dental | colon) / (lpa | phlth)
 ```
 
-We also wanted to look at lack of health insurance prevalence and health expenditure by state and compare across regions. We created graphs to display differences and ran ANOVAs to test significance.
+We also wanted to look at lack of health insurance prevalence and health expenditure by state and compare across regions. We created graphs to display differences and ran an ANOVA to test significance.
 
 ```{r, insurance_map}
 
@@ -428,6 +428,33 @@ cdc_df %>%
     font = "Open Sans",
     titlefont = "Open Sans"
   )
+```
+
+```{r, echo = FALSE}
+reg = cdc_df %>%
+  distinct(state, .keep_all = TRUE) %>%
+  mutate(region = fct_reorder(region, health_exp)) %>%
+  lm(health_exp ~ region, data = .)
+
+anova(reg) %>% 
+  broom::tidy() %>% 
+  knitr::kable()
+
+term = c("Region")
+test = c("ANOVA")
+test_stat = c(7.43803)
+p_value = c(0.0003559)
+
+regional_anova = tibble(
+  "Term" = term,
+  "Test" = test,
+  "Test Statistic" = test_stat,
+  "P-Value" = p_value
+)
+
+regional_anova %>% 
+  knitr::kable() %>% 
+  kable_styling(bootstrap_options = "striped", full_width = F, position = "center")
 ```
 
 ## Discussion:  
