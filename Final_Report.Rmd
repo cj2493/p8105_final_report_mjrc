@@ -41,7 +41,35 @@ What are the associations between (1) prevalence of lack of health insurance, (2
 
 ## Data:  
 
-Our data was taken from the 500 cities project. The data used for their analysis was obtained from the Centers of Disease Control, Division of Population Health, Epidemiology, and Surveillance Branch. The dataset provides model-based estimates for the prevalence of various diseases/practices in order to help local public health officials better serve their communities. We filtered out many variables and ultimately chose to only keep diseases associated with higher rates of fatality and/or those that placed a higher burden on our healthcare system. We also kept variables that could be clearly classified as "health practices" or behaviors whose primary purpose is to maintain or improve one's health. Because we were interested in the relationship between these variables and health insurance/expenditure, we kept the variable associated with prevalence of lack of insurance and imported data on healthcare expenditure by state from the Henry J. Kaiser Family Foundation. In order to conduct regional analysis, we imported a dataset that classified states based on region.
+Our data was taken from the 500 cities project. The data used for their analysis was obtained from the Centers of Disease Control, Division of Population Health, Epidemiology, and Surveillance Branch. The dataset provides model-based estimates for the prevalence of various diseases/practices in order to help local public health officials better serve their communities. We filtered out many variables and ultimately chose to only keep diseases associated with higher rates of fatality and/or those that placed a higher burden on our healthcare system. We also kept variables that could be clearly classified as "health practices" or behaviors whose primary purpose is to maintain or improve one's health. Because we were interested in the relationship between these variables and health insurance/expenditure, we kept the variable associated with prevalence of lack of insurance and imported data on healthcare expenditure by state from the Henry J. Kaiser Family Foundation. In order to conduct regional analysis, we imported a dataset that classified states based on region.  
+  
+We also created a data dictionary to define everything in the final fully joined dataset. 
+
+```{r, data_dictionary}
+data_dictionary = readxl::read_xlsx("./data/data_dictionary.xlsx") 
+
+data_dictionary = data_dictionary %>%
+  janitor::clean_names() %>%
+  filter(column_name %in% c("StateAbbr", "PlaceName", "Population2010", "ACCESS2_AdjPrev", "BPHIGH_AdjPrev", "BPMED_AdjPrev", "CANCER_AdjPrev", "CHD_AdjPrev", "CHECKUP_AdjPrev", "CHOLSCREEN_AdjPrev", "COLON_SCREEN_AdjPrev", "COPD_AdjPrev", "COREM_AdjPrev", "COREW_AdjPrev", "DENTAL_AdjPrev", "DIABETES_AdjPrev", "HIGHCHOL_AdjPrev", "LPA_AdjPrev", "MAMMOUSE_AdjPrev", "OBESITY_AdjPrev", "PAPTEST_AdjPrev", "PHLTH_AdjPrev", "STROKE_AdjPrev", "Geolocation"))
+
+health_exp_dictionary = tibble(column_name = c("state", "health_exp"),
+                               description = c("full name of the state", "total healthcare expenditures per capita by state in 2014"),
+                               type = c("Plain Text", "Number"))
+
+data_dictionary = full_join(data_dictionary, health_exp_dictionary)
+
+region_dict = tibble(column_name = c("region", "division"),
+                     description = c("geographical region of the state", "more specific division within the region"),
+                     type = c("Plain Text", "Plain Text")
+)
+
+data_dictionary = full_join(data_dictionary, region_dict)
+
+data_dictionary %>% 
+  knitr::kable() %>% 
+  kable_styling(bootstrap_options = "striped", full_width = F, position = "center")
+```
+
 
 ## Exploratory Analysis:  
 
