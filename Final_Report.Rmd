@@ -40,19 +40,351 @@ The initial question we explored was what are the associations between:
   
 To further support our analysis, we hypothesized that health expenditures could be a possible predictor of outcomes and practices, thus, an external data set of health expenditures by state was included. In addition, we were interested in regional trends of health for the data. To obtain regional categories, we found an external data set including four regions and states included in each region. 
 
-## Related WOrk:  
+## Related Work:  
 
 ## Initial Questions:  
 
 What are the associations between (1) prevalence of lack of health insurance, (2) regular health practices (i.e. pap smear, doctor visits, mammograms), and (3) health outcomes (diabetes, kidney disease, smoking). We also plan on  creating geographical visualizations of the prevalence of health outcomes by region?
 
 ## Data:  
-Our data was taken from the 500 cities project. The data used for their analysis was obtained from the Centers of Disease Control, Division of Population Health, Epidemiology, and Surveillance Branch. The dataset provides model-based estimates for the prevalence of various diseases/practices in order to help local public health officials better serve their communities. We filtered out many variables and ultimately chose to only keep diseases associated with higher rates of fatality and/or those that placed a higher burden on our healthcare system. We also kept variables that could be clearly classified as "health practices" or behaviors whose primary purpose is to maintain or improve one's health. Because we were interested in the relationship between these variables and health insurance/expenditure, we kept the variable associated with prevalence of lack of insurance and imported data on healthcare expenditure by state from the Henry J. Kaiser Family Foundation. In order to conduct regional analysis, we imported a dataset that classified states based on region.
 
+Our data was taken from the 500 cities project. The data used for their analysis was obtained from the Centers of Disease Control, Division of Population Health, Epidemiology, and Surveillance Branch. The dataset provides model-based estimates for the prevalence of various diseases/practices in order to help local public health officials better serve their communities. We filtered out many variables and ultimately chose to only keep diseases associated with higher rates of fatality and/or those that placed a higher burden on our healthcare system. We also kept variables that could be clearly classified as "health practices" or behaviors whose primary purpose is to maintain or improve one's health. Because we were interested in the relationship between these variables and health insurance/expenditure, we kept the variable associated with prevalence of lack of insurance and imported data on healthcare expenditure by state from the Henry J. Kaiser Family Foundation. In order to conduct regional analysis, we imported a dataset that classified states based on region.  
+  
+We also created a data dictionary to define everything in the final fully joined dataset. 
+
+```{r, data_dictionary}
+data_dictionary = readxl::read_xlsx("./data/data_dictionary.xlsx") 
+
+data_dictionary = data_dictionary %>%
+  janitor::clean_names() %>%
+  filter(column_name %in% c("StateAbbr", "PlaceName", "Population2010", "ACCESS2_AdjPrev", "BPHIGH_AdjPrev", "BPMED_AdjPrev", "CANCER_AdjPrev", "CHD_AdjPrev", "CHECKUP_AdjPrev", "CHOLSCREEN_AdjPrev", "COLON_SCREEN_AdjPrev", "COPD_AdjPrev", "COREM_AdjPrev", "COREW_AdjPrev", "DENTAL_AdjPrev", "DIABETES_AdjPrev", "HIGHCHOL_AdjPrev", "LPA_AdjPrev", "MAMMOUSE_AdjPrev", "OBESITY_AdjPrev", "PAPTEST_AdjPrev", "PHLTH_AdjPrev", "STROKE_AdjPrev", "Geolocation"))
+
+health_exp_dictionary = tibble(column_name = c("state", "health_exp"),
+                               description = c("full name of the state", "total healthcare expenditures per capita by state in 2014"),
+                               type = c("Plain Text", "Number"))
+
+data_dictionary = full_join(data_dictionary, health_exp_dictionary)
+
+region_dict = tibble(column_name = c("region", "division"),
+                     description = c("geographical region of the state", "more specific division within the region"),
+                     type = c("Plain Text", "Plain Text")
+)
+
+data_dictionary = full_join(data_dictionary, region_dict)
+
+data_dictionary %>% 
+  knitr::kable() %>% 
+  kable_styling(bootstrap_options = "striped", full_width = F, position = "center")
+```
 
 
 ## Exploratory Analysis:  
 
 ## Additional Analysis:  
+
+### Regression Analysis: 
+
+To explore the relationship between commonly used health practices and health outcomes, we tried to fit some multiple linear regression models using backwards selection.  The models we created were attempting to predict the prevalence of cancer, high cholesterol and diabetes. For each model, we started with all of the health practice variables: core screenings for men, core screenings for women, dental visits, lack of physical activity, mammogram usage, routine checkups, 
+cholesterol screenings, and colon screenings. All of these variables are also in terms of prevalence. Then, to show the results in a way that people who aren't statisticians could understand, I produced a table for each model that showed which variables were included in the final model and the direction of effect they had on the disease prevalence.  
+
+```{r, cancer_model}
+cancer_full_mod = lm(CANCER_AdjPrev ~ COREM_AdjPrev + COREW_AdjPrev + DENTAL_AdjPrev + LPA_AdjPrev + MAMMOUSE_AdjPrev + PAPTEST_AdjPrev + CHECKUP_AdjPrev + CHOLSCREEN_AdjPrev + COLON_SCREEN_AdjPrev, data = cdc_df)
+summary(cancer_full_mod)
+cancer_minus_1 = update(cancer_full_mod, . ~ . -COREW_AdjPrev)
+summary(cancer_minus_1)
+cancer_minus_2 = update(cancer_minus_1, . ~ . -LPA_AdjPrev)
+summary(cancer_minus_2)
+cancer_minus_3 = update(cancer_minus_2, . ~ . -CHOLSCREEN_AdjPrev)
+summary(cancer_minus_3)
+cancer_minus_4 = update(cancer_minus_3, . ~ . -PAPTEST_AdjPrev)
+summary(cancer_minus_4)
+```
+
+```{r, cancer_tbl}
+health_practice = c("Core Practices for Men", "Dental Visits", "Mammogram Usage",
+                    "Routine Checkups", "Colon Screening")
+effect = c("Positive", "Negative", "Negative", "Negative", "Positive")
+estimate = c(0.012, -0.033, -0.036, -0.0095, 0.107)
+p_val = c(0.012, '1.06e-14', '2.31e-06', 0.0295, '< 2e-16')
+cancer_tbl = tibble(
+  "Health Practice" = health_practice,
+  "Effect on Cancer Prevalence" = effect,
+  "Coefficient Estimate" = estimate,
+  "P-Value" = p_val
+)
+cancer_tbl %>%
+  knitr::kable() %>%
+  kable_styling(bootstrap_options = "striped", full_width = T, position = "center")
+```
+
+```{r, chol_model}
+chol_full_mod = lm(HIGHCHOL_AdjPrev ~ COREM_AdjPrev + COREW_AdjPrev + DENTAL_AdjPrev + LPA_AdjPrev + MAMMOUSE_AdjPrev + PAPTEST_AdjPrev + CHECKUP_AdjPrev + CHOLSCREEN_AdjPrev + COLON_SCREEN_AdjPrev, data = cdc_df)
+summary(chol_full_mod)
+chol_minus_1 = update(chol_full_mod, . ~ . -CHOLSCREEN_AdjPrev) 
+summary(chol_minus_1)
+chol_minus_2 = update(chol_minus_1, . ~ . -COREW_AdjPrev)
+summary(chol_minus_2)
+chol_minus_3 = update(chol_minus_2, . ~ . -COREM_AdjPrev)
+summary(chol_minus_3)
+chol_minus_4 = update(chol_minus_3, . ~ . -MAMMOUSE_AdjPrev)
+summary(chol_minus_4)
+chol_minus_5 = update(chol_minus_4, . ~ . -PAPTEST_AdjPrev)
+summary(chol_minus_5)
+```
+
+```{r, chol_tbl}
+health_practice = c("Dental Visits", "Lack of Physical Activity",
+                    "Routine Checkups", "Colon Screening")
+effect = c("Negative", "Positive", "Positive", "Positive")
+estimate = c(-0.064, 0.171, 0.0401, 0.061)
+p_val = c(0.004, '9.18e-07', 0.049, 0.037)
+chol_tbl = tibble(
+  "Health Practice" = health_practice,
+  "Effect on High Cholesterol Prevalence" = effect,
+  "Coefficient Estimate" = estimate,
+  "P-Value" = p_val
+)
+chol_tbl %>%
+  knitr::kable() %>%
+  kable_styling(bootstrap_options = "striped", full_width = T, position = "center")
+```
+
+```{r, diab_model}
+diab_full_mod = lm(DIABETES_AdjPrev ~ COREM_AdjPrev + COREW_AdjPrev + DENTAL_AdjPrev + LPA_AdjPrev + MAMMOUSE_AdjPrev + PAPTEST_AdjPrev + CHECKUP_AdjPrev + CHOLSCREEN_AdjPrev + COLON_SCREEN_AdjPrev, data = cdc_df)
+summary(diab_full_mod)
+diab_minus_1 = update(diab_full_mod, . ~ . -COLON_SCREEN_AdjPrev)
+summary(diab_minus_1)
+diab_minus_2 = update(diab_minus_1, . ~ . -PAPTEST_AdjPrev)
+summary(diab_minus_2)
+diab_minus_3 = update(diab_minus_2, . ~ . -COREM_AdjPrev)
+summary(diab_minus_3)
+```
+
+```{r, diab_tbl}
+health_practice = c("Core Practices for Women", "Dental Visits", "Lack of Physical Activity", "Mammogram Usage", "Routine Checkups", "Cholesterol Screening")
+effect = c("Negative", "Negative", "Positive", "Positive", "Positive", "Negative")
+estimate = c(-0.063, -0.135, 0.193, 0.085, 0.076, -0.074)
+p_val = c('6.19e-11', '< 2e-16', '< 2e-16', '1.44e-08', '1.33e-08', 0.0004)
+diab_tbl = tibble(
+  "Health Practice" = health_practice,
+  "Effect on Diabetes Prevalence" = effect,
+  "Coefficient Estimate" = estimate,
+  "P-Value" = p_val
+)
+diab_tbl %>%
+  knitr::kable() %>%
+  kable_styling(bootstrap_options = "striped", full_width = T, position = "center")
+```
+
+We ran simple linear regressions to determine if there was an association between the prevalence of lack of insurance and the prevalence of health outcomes -- colon/cancer/cholestrol screenings, mammograms, etc. The purpose here was not to build a predictive model, only to test association and therefore any statistics related to model reliability were disregarded.
+
+```{r, insurance_slrs}
+cdc_df %>%
+  lm(ACCESS2_AdjPrev ~ CHECKUP_AdjPrev, data = .) %>%
+  summary
+
+cdc_df %>%
+  lm(ACCESS2_AdjPrev ~ DENTAL_AdjPrev, data = .) %>%
+  summary
+
+cdc_df %>%
+  lm(ACCESS2_AdjPrev ~ CHOLSCREEN_AdjPrev, data = .) %>%
+  summary
+
+cdc_df %>%
+  lm(ACCESS2_AdjPrev ~ COLON_SCREEN_AdjPrev, data = .) %>%
+  summary
+
+cdc_df %>%
+  lm(ACCESS2_AdjPrev ~ COREM_AdjPrev, data = .) %>%
+  summary
+
+cdc_df %>%
+  lm(ACCESS2_AdjPrev ~ COREW_AdjPrev, data = .) %>%
+  summary
+
+cdc_df %>%
+  lm(ACCESS2_AdjPrev ~ LPA_AdjPrev, data = .) %>%
+  summary
+
+cdc_df %>%
+  lm(ACCESS2_AdjPrev ~ MAMMOUSE_AdjPrev, data = .) %>%
+  summary
+
+cdc_df %>%
+  lm(ACCESS2_AdjPrev ~ PAPTEST_AdjPrev, data = .) %>%
+  summary
+
+cdc_df %>%
+  lm(ACCESS2_AdjPrev ~ PHLTH_AdjPrev, data = .) %>%
+  summary
+```
+
+```{r, insurance_tbl}
+health_practice = c("Health Checkup", "Cholestrol Screening", "Colon Screening", "Dental", "COREM", "COREW", "LPA", "Mammogram", "Pap Test", "Poor Physical Health")
+
+linear = c("No", "Yes", "Yes", "Yes", "Yes", "Yes", "Yes", "Yes", "Yes", "Yes")
+
+direction = c("NA", "Negative", "Negative", "Negative", "Negative", "Negative", "Positive", "Negative", "Negative", "Positive")
+
+p_value = c(0.711, '<2e-16', '<2e-16', '<2e-16', '<2e-16', '<2e-16', '<2e-16', '<2e-16', '<2e-16', '<2e-16')
+
+insurance_asso = tibble(
+  "Health Practice" = health_practice,
+  "Linear Association?" = linear,
+  "Direction of Association" = direction,
+  "p-value" = p_value
+) 
+
+insurance_asso %>% 
+  knitr::kable() %>% 
+  kable_styling(bootstrap_options = "striped", full_width = T, position = "center")
+```
+
+```{r, insurance_plots}
+dental = cdc_df %>% 
+  ggplot(aes(x = ACCESS2_AdjPrev, y = DENTAL_AdjPrev)) + 
+  geom_point(alpha = 0.5) + 
+  theme_bw() +
+  xlab("% Without Insurance") +
+  ylab("Dental")
+
+colon = cdc_df %>% 
+  ggplot(aes(x = ACCESS2_AdjPrev, y = COLON_SCREEN_AdjPrev)) + 
+  geom_point(alpha = 0.5) + 
+  theme_bw() +
+  xlab("% Without Insurance") +
+  ylab("Colon Screening")
+
+lpa = cdc_df %>% 
+  ggplot(aes(x = ACCESS2_AdjPrev, y = LPA_AdjPrev)) + 
+  geom_point(alpha = 0.5) + 
+  theme_bw() +
+  xlab("% Without Insurance") +
+  ylab("No Physical Activity")
+
+phlth = cdc_df %>% 
+  ggplot(aes(x = ACCESS2_AdjPrev, y = PHLTH_AdjPrev)) + 
+  geom_point(alpha = 0.5) + 
+  theme_bw() +
+  xlab("% Without Insurance") +
+  ylab("Poor Physical Health")
+
+(dental | colon) / (lpa | phlth)
+```
+
+We also wanted to look at lack of health insurance prevalence and health expenditure by state and compare across regions. We created graphs to display differences and ran ANOVAs to test significance.
+
+```{r, insurance_map}
+
+usa = map_data("state") %>%
+  rename(state = "region")
+
+cdc_df_map = read_csv("./data/cdc_df.csv") %>%
+  separate(Geolocation, into = c("long", "lat"), sep = ",") %>%
+  mutate(long = str_replace(long, "\\(", ""),
+         lat = str_replace(lat, "\\)", ""),
+         long = as.numeric(long),
+         lat = as.numeric(lat),
+         state = factor(state),
+         state = tolower(state)) %>%
+  filter(!state %in% c("alaska", "hawaii")) %>%
+  left_join(., usa, by = "state")
+
+
+ggplot() + 
+  geom_polygon(data = cdc_df_map, aes(x = long.y, y = lat.y, group = state, 
+                                      fill = ACCESS2_AdjPrev), 
+               color = "white") +
+  scale_fill_gradient2(low = "dark blue", mid = "white", high = "red", space = "Lab",
+                       midpoint = mean(cdc_df_map$ACCESS2_AdjPrev),
+                       name = "% Lacking") +
+  coord_fixed(1) +
+  geom_point(data = cdc_df_map, aes(x = lat.x, y = long.x), 
+             color = "grey13", size = 0.5, alpha = 0.3) +
+  theme_bw() +
+  theme(axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        legend.title = element_text(size = 10),
+        plot.caption = element_text(size = 8),
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank()) +
+  labs(title = "Lack of Health Insurance",
+       caption = 
+         "Points represent 500 most populated cities in the US,\n excluding Hawaii and Alaska") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+```
+
+```{r, expend_map}
+
+usa = map_data("state") %>%
+  rename(state = "region")
+
+cdc_df_map = read_csv("./data/cdc_df.csv") %>%
+  separate(Geolocation, into = c("long", "lat"), sep = ",") %>%
+  mutate(long = str_replace(long, "\\(", ""),
+         lat = str_replace(lat, "\\)", ""),
+         long = as.numeric(long),
+         lat = as.numeric(lat),
+         state = factor(state),
+         state = tolower(state)) %>%
+  filter(!state %in% c("alaska", "hawaii")) %>%
+  left_join(., usa, by = "state")
+
+ggplot() + 
+  geom_polygon(data = cdc_df_map, aes(x = long.y, y = lat.y, 
+                                      group = state, fill = health_exp), color = "white") +
+  scale_fill_gradient2(low = "red", mid = "white", high = "blue", space = "Lab",
+                       midpoint = mean(cdc_df_map$health_exp),
+                       name = "US Dollars") +
+  coord_fixed(1) +
+  geom_point(data = cdc_df_map, aes(x = lat.x, y = long.x), 
+             color = "grey13", size = 0.5, alpha = 0.3) +
+  theme_bw() +
+  theme(axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        legend.title = element_text(size = 10),
+        plot.caption = element_text(size = 8),
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank()) +
+  labs(title = "Healthcare Expenditure per Capita",
+       caption = 
+         "Points represent 500 most populated cities in the US,\n excluding Hawaii and Alaska") + 
+  theme(plot.title = element_text(hjust = 0.5))
+
+```
+
+```{r, region_boxplot}
+cdc_df %>%
+  distinct(state, .keep_all = TRUE) %>%
+  mutate(text_label = str_c("Health Expenditures per Capita: ", health_exp, '\nState: ', StateAbbr)) %>%
+  mutate(region = fct_reorder(region, health_exp)) %>%
+  plot_ly(y = ~health_exp, color = ~region, type = "box", text = ~text_label) %>%
+  layout(
+    xaxis = list(title = "Region"),
+    yaxis = list(title = "Health Expenditures per Capita per State"),
+    title = "Comparing Healthcare Expenditure Across Regions",
+    font = "Open Sans",
+    titlefont = "Open Sans"
+  )
+```
+
+
+
+
+
+
+
 
 ## Discussion:  
