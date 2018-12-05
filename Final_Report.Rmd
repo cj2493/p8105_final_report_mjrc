@@ -97,19 +97,12 @@ cdc_df = left_join(cdc_df, regions_df, by = "state")
 ```
 
 
-
-Similar to downloading our initial data, variable obtaining issues progressed when attempting to scrape the data for our data dictionary. Therefore, we copyied the data dictionary given on the website and pasted into an excel file. Below is the link to the excel data dictionary file:
+Similar to downloading our initial data, variable obtaining issues progressed when attempting to scrape the data for our data dictionary. Therefore, we copied the data dictionary given on the website and pasted into an excel file. Below is the link to the excel data dictionary file:
 
 https://drive.google.com/file/d/1Myn3kicEjmmeD2PGoOehSlA30UtFfaV9/view?usp=sharing
 
-
-Code creating a data dictionary to define everything in the final fully joined dataset. 
-=======
-Our data was taken from the 500 cities project. The data used for their analysis was obtained from the Centers of Disease Control, Division of Population Health, Epidemiology, and Surveillance Branch. The dataset provides model-based estimates for the prevalence of various diseases/practices in order to help local public health officials better serve their communities. We filtered out many variables and ultimately chose to only keep diseases associated with higher rates of fatality and/or those that placed a higher burden on our healthcare system. We also kept variables that could be clearly classified as "health practices" or behaviors whose primary purpose is to maintain or improve one's health. The dataset provided included crude values and adjusted values. We opted to use the adjusted values because they provide more accurate estimates. Because we were interested in the relationship between these variables and health insurance/expenditure, we kept the variable associated with prevalence of lack of insurance and imported data on healthcare expenditure by state from the Henry J. Kaiser Family Foundation. In order to conduct regional analysis, we imported a dataset that classified states based on region.  
   
-We also created a data dictionary to define everything in the final fully joined dataset. 
->>>>>>> 037df13f991349d5d7006eec90ba91725363dc45
-
+Code to create a data dictionary: 
 ```{r, data_dictionary}
 data_dictionary = readxl::read_xlsx("./data/data_dictionary.xlsx") 
 
