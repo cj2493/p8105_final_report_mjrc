@@ -82,20 +82,24 @@ data_dictionary %>%
 
 ## Additional Analysis:  
 
-### Regression Analysis: 
+### Multiple Linear Regression: 
 
 To explore the relationship between commonly used health practices and health outcomes, we tried to fit some multiple linear regression models using backwards selection.  The models we created were attempting to predict the prevalence of cancer, high cholesterol and diabetes. For each model, we started with all of the health practice variables: core screenings for men, core screenings for women, dental visits, lack of physical activity, mammogram usage, routine checkups, 
-cholesterol screenings, and colon screenings. All of these variables are also in terms of prevalence. Then, to show the results in a way that people who aren't statisticians could understand, I produced a table for each model that showed which variables were included in the final model and the direction of effect they had on the disease prevalence.  
+cholesterol screenings, and colon screenings. All of these variables are also in terms of prevalence. Then, to show the results in a way that people who aren't statisticians could understand, I produced a table for each model that showed which variables were included in the final model and the direction of effect they had on the disease prevalence. Once these models were created, we performed cross validation and compared the RMSEs of each to look at the relative predicting power.
 
 ```{r, cancer_model}
 cancer_full_mod = lm(CANCER_AdjPrev ~ COREM_AdjPrev + COREW_AdjPrev + DENTAL_AdjPrev + LPA_AdjPrev + MAMMOUSE_AdjPrev + PAPTEST_AdjPrev + CHECKUP_AdjPrev + CHOLSCREEN_AdjPrev + COLON_SCREEN_AdjPrev, data = cdc_df)
 summary(cancer_full_mod)
+
 cancer_minus_1 = update(cancer_full_mod, . ~ . -COREW_AdjPrev)
 summary(cancer_minus_1)
+
 cancer_minus_2 = update(cancer_minus_1, . ~ . -LPA_AdjPrev)
 summary(cancer_minus_2)
+
 cancer_minus_3 = update(cancer_minus_2, . ~ . -CHOLSCREEN_AdjPrev)
 summary(cancer_minus_3)
+
 cancer_minus_4 = update(cancer_minus_3, . ~ . -PAPTEST_AdjPrev)
 summary(cancer_minus_4)
 ```
@@ -106,12 +110,14 @@ health_practice = c("Core Practices for Men", "Dental Visits", "Mammogram Usage"
 effect = c("Positive", "Negative", "Negative", "Negative", "Positive")
 estimate = c(0.012, -0.033, -0.036, -0.0095, 0.107)
 p_val = c(0.012, '1.06e-14', '2.31e-06', 0.0295, '< 2e-16')
+
 cancer_tbl = tibble(
   "Health Practice" = health_practice,
   "Effect on Cancer Prevalence" = effect,
   "Coefficient Estimate" = estimate,
   "P-Value" = p_val
 )
+
 cancer_tbl %>%
   knitr::kable() %>%
   kable_styling(bootstrap_options = "striped", full_width = T, position = "center")
@@ -120,14 +126,19 @@ cancer_tbl %>%
 ```{r, chol_model}
 chol_full_mod = lm(HIGHCHOL_AdjPrev ~ COREM_AdjPrev + COREW_AdjPrev + DENTAL_AdjPrev + LPA_AdjPrev + MAMMOUSE_AdjPrev + PAPTEST_AdjPrev + CHECKUP_AdjPrev + CHOLSCREEN_AdjPrev + COLON_SCREEN_AdjPrev, data = cdc_df)
 summary(chol_full_mod)
+
 chol_minus_1 = update(chol_full_mod, . ~ . -CHOLSCREEN_AdjPrev) 
 summary(chol_minus_1)
+
 chol_minus_2 = update(chol_minus_1, . ~ . -COREW_AdjPrev)
 summary(chol_minus_2)
+
 chol_minus_3 = update(chol_minus_2, . ~ . -COREM_AdjPrev)
 summary(chol_minus_3)
+
 chol_minus_4 = update(chol_minus_3, . ~ . -MAMMOUSE_AdjPrev)
 summary(chol_minus_4)
+
 chol_minus_5 = update(chol_minus_4, . ~ . -PAPTEST_AdjPrev)
 summary(chol_minus_5)
 ```
@@ -138,12 +149,14 @@ health_practice = c("Dental Visits", "Lack of Physical Activity",
 effect = c("Negative", "Positive", "Positive", "Positive")
 estimate = c(-0.064, 0.171, 0.0401, 0.061)
 p_val = c(0.004, '9.18e-07', 0.049, 0.037)
+
 chol_tbl = tibble(
   "Health Practice" = health_practice,
   "Effect on High Cholesterol Prevalence" = effect,
   "Coefficient Estimate" = estimate,
   "P-Value" = p_val
 )
+
 chol_tbl %>%
   knitr::kable() %>%
   kable_styling(bootstrap_options = "striped", full_width = T, position = "center")
@@ -152,10 +165,13 @@ chol_tbl %>%
 ```{r, diab_model}
 diab_full_mod = lm(DIABETES_AdjPrev ~ COREM_AdjPrev + COREW_AdjPrev + DENTAL_AdjPrev + LPA_AdjPrev + MAMMOUSE_AdjPrev + PAPTEST_AdjPrev + CHECKUP_AdjPrev + CHOLSCREEN_AdjPrev + COLON_SCREEN_AdjPrev, data = cdc_df)
 summary(diab_full_mod)
+
 diab_minus_1 = update(diab_full_mod, . ~ . -COLON_SCREEN_AdjPrev)
 summary(diab_minus_1)
+
 diab_minus_2 = update(diab_minus_1, . ~ . -PAPTEST_AdjPrev)
 summary(diab_minus_2)
+
 diab_minus_3 = update(diab_minus_2, . ~ . -COREM_AdjPrev)
 summary(diab_minus_3)
 ```
@@ -165,16 +181,46 @@ health_practice = c("Core Practices for Women", "Dental Visits", "Lack of Physic
 effect = c("Negative", "Negative", "Positive", "Positive", "Positive", "Negative")
 estimate = c(-0.063, -0.135, 0.193, 0.085, 0.076, -0.074)
 p_val = c('6.19e-11', '< 2e-16', '< 2e-16', '1.44e-08', '1.33e-08', 0.0004)
+
 diab_tbl = tibble(
   "Health Practice" = health_practice,
   "Effect on Diabetes Prevalence" = effect,
   "Coefficient Estimate" = estimate,
   "P-Value" = p_val
 )
+
 diab_tbl %>%
   knitr::kable() %>%
   kable_styling(bootstrap_options = "striped", full_width = T, position = "center")
 ```
+
+```{r, cross_validation}
+cv_df =
+  crossv_mc(cdc_df, 500) %>% 
+  mutate(train = map(train, as_tibble),
+         test = map(test, as_tibble))
+cv_df = 
+  cv_df %>% 
+  mutate(cancer_minus_4 = map(train, ~lm(CANCER_AdjPrev ~ COREM_AdjPrev + DENTAL_AdjPrev + MAMMOUSE_AdjPrev + CHECKUP_AdjPrev + COLON_SCREEN_AdjPrev, data = .x)),
+         chol_minus_5   = map(train, ~lm(HIGHCHOL_AdjPrev ~ DENTAL_AdjPrev + LPA_AdjPrev + CHECKUP_AdjPrev + COLON_SCREEN_AdjPrev, data = .x)),
+         diab_minus_3   = map(train, ~lm(DIABETES_AdjPrev ~ COREW_AdjPrev + DENTAL_AdjPrev + LPA_AdjPrev + MAMMOUSE_AdjPrev + CHECKUP_AdjPrev + CHOLSCREEN_AdjPrev, data = .x))) %>% 
+  mutate(rmse_cancer    = map2_dbl(cancer_minus_4, test, ~rmse(model = .x, data = .y)),
+         rmse_chol      = map2_dbl(chol_minus_5, test, ~rmse(model = .x, data = .y)),
+         rmse_diabetes  = map2_dbl(diab_minus_3, test, ~rmse(model = .x, data = .y)))
+
+cv_df %>% 
+  select(starts_with("rmse")) %>% 
+  gather(key = model, value = rmse) %>% 
+  mutate(model = str_replace(model, "rmse_", ""), 
+         model = fct_inorder(model)) %>% 
+  ggplot(aes(x = model, y = rmse)) + 
+  geom_violin() +
+  theme_bw()
+```
+
+From this, we can see that the health practice variables from the dataset have the most predictive power for prevalence of cancer, and the least for high cholesterol. Intuitively, this makes sense for a couple of reasons. First, cholesterol levels are highly related to genetics, and this dataset has no variables collected on genetics. Also, many of the practices measured by this dataset are cancer screening practices.  
+
+### Simple Linear Regression  
 
 We ran simple linear regressions to determine if there was an association between the prevalence of lack of insurance and the prevalence of health outcomes -- colon/cancer/cholestrol screenings, mammograms, etc. The purpose here was not to build a predictive model, only to test association and therefore any statistics related to model reliability were disregarded.
 
