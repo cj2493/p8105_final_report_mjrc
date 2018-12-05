@@ -40,11 +40,6 @@ The initial question we explored was what are the associations between:
   
 To further support our analysis, we hypothesized that health expenditures could be a possible predictor of outcomes and practices, thus, an external data set of health expenditures by state was included. In addition, we were interested in regional trends of health for the data. To obtain regional categories, we found an external data set including four regions and states included in each region. 
 
-## Related Work:  
-
-## Initial Questions:  
-
-What are the associations between (1) prevalence of lack of health insurance, (2) regular health practices (i.e. pap smear, doctor visits, mammograms), and (3) health outcomes (diabetes, kidney disease, smoking). We also plan on  creating geographical visualizations of the prevalence of health outcomes by region?
 
 ## Data:  
 
