@@ -141,6 +141,212 @@ diab_tbl %>%
   kable_styling(bootstrap_options = "striped", full_width = T, position = "center")
 ```
 
+We ran simple linear regressions to determine if there was an association between the prevalence of lack of insurance and the prevalence of health outcomes -- colon/cancer/cholestrol screenings, mammograms, etc. The purpose here was not to build a predictive model, only to test association and therefore any statistics related to model reliability were disregarded.
+
+```{r, insurance_slrs}
+cdc_df %>%
+  lm(ACCESS2_AdjPrev ~ CHECKUP_AdjPrev, data = .) %>%
+  summary
+
+cdc_df %>%
+  lm(ACCESS2_AdjPrev ~ DENTAL_AdjPrev, data = .) %>%
+  summary
+
+cdc_df %>%
+  lm(ACCESS2_AdjPrev ~ CHOLSCREEN_AdjPrev, data = .) %>%
+  summary
+
+cdc_df %>%
+  lm(ACCESS2_AdjPrev ~ COLON_SCREEN_AdjPrev, data = .) %>%
+  summary
+
+cdc_df %>%
+  lm(ACCESS2_AdjPrev ~ COREM_AdjPrev, data = .) %>%
+  summary
+
+cdc_df %>%
+  lm(ACCESS2_AdjPrev ~ COREW_AdjPrev, data = .) %>%
+  summary
+
+cdc_df %>%
+  lm(ACCESS2_AdjPrev ~ LPA_AdjPrev, data = .) %>%
+  summary
+
+cdc_df %>%
+  lm(ACCESS2_AdjPrev ~ MAMMOUSE_AdjPrev, data = .) %>%
+  summary
+
+cdc_df %>%
+  lm(ACCESS2_AdjPrev ~ PAPTEST_AdjPrev, data = .) %>%
+  summary
+
+cdc_df %>%
+  lm(ACCESS2_AdjPrev ~ PHLTH_AdjPrev, data = .) %>%
+  summary
+```
+
+```{r, insurance_tbl}
+health_practice = c("Health Checkup", "Cholestrol Screening", "Colon Screening", "Dental", "COREM", "COREW", "LPA", "Mammogram", "Pap Test", "Poor Physical Health")
+
+linear = c("No", "Yes", "Yes", "Yes", "Yes", "Yes", "Yes", "Yes", "Yes", "Yes")
+
+direction = c("NA", "Negative", "Negative", "Negative", "Negative", "Negative", "Positive", "Negative", "Negative", "Positive")
+
+p_value = c(0.711, '<2e-16', '<2e-16', '<2e-16', '<2e-16', '<2e-16', '<2e-16', '<2e-16', '<2e-16', '<2e-16')
+
+insurance_asso = tibble(
+  "Health Practice" = health_practice,
+  "Linear Association?" = linear,
+  "Direction of Association" = direction,
+  "p-value" = p_value
+) 
+
+insurance_asso %>% 
+  knitr::kable() %>% 
+  kable_styling(bootstrap_options = "striped", full_width = T, position = "center")
+```
+
+```{r, insurance_plots}
+dental = cdc_df %>% 
+  ggplot(aes(x = ACCESS2_AdjPrev, y = DENTAL_AdjPrev)) + 
+  geom_point(alpha = 0.5) + 
+  theme_bw() +
+  xlab("% Without Insurance") +
+  ylab("Dental")
+
+colon = cdc_df %>% 
+  ggplot(aes(x = ACCESS2_AdjPrev, y = COLON_SCREEN_AdjPrev)) + 
+  geom_point(alpha = 0.5) + 
+  theme_bw() +
+  xlab("% Without Insurance") +
+  ylab("Colon Screening")
+
+lpa = cdc_df %>% 
+  ggplot(aes(x = ACCESS2_AdjPrev, y = LPA_AdjPrev)) + 
+  geom_point(alpha = 0.5) + 
+  theme_bw() +
+  xlab("% Without Insurance") +
+  ylab("No Physical Activity")
+
+phlth = cdc_df %>% 
+  ggplot(aes(x = ACCESS2_AdjPrev, y = PHLTH_AdjPrev)) + 
+  geom_point(alpha = 0.5) + 
+  theme_bw() +
+  xlab("% Without Insurance") +
+  ylab("Poor Physical Health")
+
+(dental | colon) / (lpa | phlth)
+```
+
+We also wanted to look at lack of health insurance prevalence and health expenditure by state and compare across regions. We created graphs to display differences and ran ANOVAs to test significance.
+
+```{r, insurance_map}
+
+usa = map_data("state") %>%
+  rename(state = "region")
+
+cdc_df_map = read_csv("./data/cdc_df.csv") %>%
+  separate(Geolocation, into = c("long", "lat"), sep = ",") %>%
+  mutate(long = str_replace(long, "\\(", ""),
+         lat = str_replace(lat, "\\)", ""),
+         long = as.numeric(long),
+         lat = as.numeric(lat),
+         state = factor(state),
+         state = tolower(state)) %>%
+  filter(!state %in% c("alaska", "hawaii")) %>%
+  left_join(., usa, by = "state")
+
+
+ggplot() + 
+  geom_polygon(data = cdc_df_map, aes(x = long.y, y = lat.y, group = state, 
+                                      fill = ACCESS2_AdjPrev), 
+               color = "white") +
+  scale_fill_gradient2(low = "dark blue", mid = "white", high = "red", space = "Lab",
+                       midpoint = mean(cdc_df_map$ACCESS2_AdjPrev),
+                       name = "% Lacking") +
+  coord_fixed(1) +
+  geom_point(data = cdc_df_map, aes(x = lat.x, y = long.x), 
+             color = "grey13", size = 0.5, alpha = 0.3) +
+  theme_bw() +
+  theme(axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        legend.title = element_text(size = 10),
+        plot.caption = element_text(size = 8),
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank()) +
+  labs(title = "Lack of Health Insurance",
+       caption = 
+         "Points represent 500 most populated cities in the US,\n excluding Hawaii and Alaska") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+```
+
+```{r, expend_map}
+
+usa = map_data("state") %>%
+  rename(state = "region")
+
+cdc_df_map = read_csv("./data/cdc_df.csv") %>%
+  separate(Geolocation, into = c("long", "lat"), sep = ",") %>%
+  mutate(long = str_replace(long, "\\(", ""),
+         lat = str_replace(lat, "\\)", ""),
+         long = as.numeric(long),
+         lat = as.numeric(lat),
+         state = factor(state),
+         state = tolower(state)) %>%
+  filter(!state %in% c("alaska", "hawaii")) %>%
+  left_join(., usa, by = "state")
+
+ggplot() + 
+  geom_polygon(data = cdc_df_map, aes(x = long.y, y = lat.y, 
+                                      group = state, fill = health_exp), color = "white") +
+  scale_fill_gradient2(low = "red", mid = "white", high = "blue", space = "Lab",
+                       midpoint = mean(cdc_df_map$health_exp),
+                       name = "US Dollars") +
+  coord_fixed(1) +
+  geom_point(data = cdc_df_map, aes(x = lat.x, y = long.x), 
+             color = "grey13", size = 0.5, alpha = 0.3) +
+  theme_bw() +
+  theme(axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        legend.title = element_text(size = 10),
+        plot.caption = element_text(size = 8),
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank()) +
+  labs(title = "Healthcare Expenditure per Capita",
+       caption = 
+         "Points represent 500 most populated cities in the US,\n excluding Hawaii and Alaska") + 
+  theme(plot.title = element_text(hjust = 0.5))
+
+```
+
+```{r, region_boxplot}
+cdc_df %>%
+  distinct(state, .keep_all = TRUE) %>%
+  mutate(text_label = str_c("Health Expenditures per Capita: ", health_exp, '\nState: ', StateAbbr)) %>%
+  mutate(region = fct_reorder(region, health_exp)) %>%
+  plot_ly(y = ~health_exp, color = ~region, type = "box", text = ~text_label) %>%
+  layout(
+    xaxis = list(title = "Region"),
+    yaxis = list(title = "Health Expenditures per Capita per State"),
+    title = "Comparing Healthcare Expenditure Across Regions",
+    font = "Open Sans",
+    titlefont = "Open Sans"
+  )
+```
+
+
+
 
 
 
